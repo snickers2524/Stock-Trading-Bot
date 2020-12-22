@@ -1,66 +1,56 @@
-import yfinance as yf
-import datetime
 import pandas as pd
 import mysql.connector #pip install mysql-connector-python
-from datetime import date
-import numbers
-# import functions as fct
-
-def getData(startDate, endDate, company):
-    object = yf.Ticker(company)
-    data = object.history(start=startDate, end=endDate)
-    data.to_csv('test.csv')
-    return data
-
-config = {
-    'user':'admin',
-    'password':'Watermelon4054',
-    'host':'stock-trader-db.cmppj2geoch9.us-east-1.rds.amazonaws.com',
-    'port':3306,
-    'database':'trades'
-}
-
-def insertData(data, cursor, table, company):
-    # creating column list for insertion
-    cols = "`,`".join([str(i) for i in data.columns.tolist()]) + "`,`company"
-    
-    # Insert DataFrame recrds one by one.
-    for i,row in data.iterrows():
-        vals = ",".join([str(i) if isinstance(i, numbers.Number) else f"\"{str(i)}\""  for i in row.to_list()]) + f",\"{company}\""
-        sql = f"INSERT INTO {table} (`{cols}`) VALUES ({vals})"
-        print(sql)
-        try:
-            cursor.execute(sql)
-        except mysql.connector.errors.IntegrityError:
-            print("Duplicate entry, must be a holiday")
-        
+from datetime import date, timedelta
+import functions as fct
+import sql as sql
+       
 
 def main():
     today = date.today()
 
     # Testing if the markets are open (i.e. is it a weekday)
-    # if today.isoweekday()  in range(1,6):
-    if True:
+    if today.isoweekday()  in range(1,6):
         # Opening connect to db
-        cnx = mysql.connector.connect(**config)
+        cnx = mysql.connector.connect(**sql.config)
         cursor = cnx.cursor()
 
         # Getting list of companies
         cursor.execute('select * from companies')
-        rows = cursor.fetchall()
+        companies = cursor.fetchall()
 
-        # Iterating through companies to get new data
-        for row in rows:
-            data = getData(startDate='2000-01-01', endDate=today,company=row[1])
+        # Iterating through companies to get new data, and make new predictions
+        for company in companies:
+            data = fct.getData(startDate=today, endDate=today+timedelta(days=1),company=company[1])
             data['Date'] = data.index
+            print(data)
 
-            # Inserting the new data
-            insertData(data=data[['Date','Open']],cursor=cursor,table='openingPrices',company=row[1])
+            # Inserting the new opening price.  This then causes the trigger "updateResidualTrigger" to fire that updates the residual for the current trading day
+            fct.insertData(data=data[['Date','Open']],cursor=cursor,table='openingPrices',company=company[1])
             cnx.commit()
-            # insertData(data=data[['High','Low','Close','Volume','Dividends','Stock Splits','Date']],cursor=cursor,table='additionalPrices',company=row[1])
-            # cnx.commit()
+
+            # Getting past 40 days of opening stock price
+            cursor.execute(f"select * from (select * from openPricesView where company = '{company[1]}' order by rowNum desc limit 40) as openPrice order by date;")
+            openingPricesRaw = cursor.fetchall()
+            openingPricesDF = pd.DataFrame(openingPricesRaw,columns=['rowNum','date','open','company'])
+            scaledX, scaler = fct.transform(openingPricesDF)
+
+            # Making the predictions
+            preds = fct.predict(x=scaledX, scaler=scaler, modelName="FORD")
+
+            # Getting the date that we are making predictions for
+            tradingDay = fct.nextTradingDay(today, cursor)
+      
+            # Inserting prediction.  This causes the trigger "createAction" to fire that will create the boosted prediction and decide on the what action to take.
+            fct.insertData(data=pd.DataFrame(data={'date':[tradingDay],'modelPredicted':preds}),
+                            cursor=cursor,
+                            table='predictions',
+                            company=company[1])
+            cnx.commit() 
 
         cnx.close()
+
+
+
 
 if __name__ == '__main__':
     main()
