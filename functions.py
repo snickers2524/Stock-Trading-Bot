@@ -71,12 +71,13 @@ def loadModel(name, location=''):
     model = model_from_json(loaded_model_json)
 
     # load weights into new model
-    model.load_weights(f"{location}{name}.h5")
+    model.load_weights(f"{location}/{name}.h5")
     print("Loaded model from disk")
     return model
 
 def predict(x, scaler, modelName):
-    model = loadModel(modelName)
+    model = loadModel(modelName, location="C:/Users/Administrator/Documents/GitHub/Stock-Trading-Bot/")
+    # model = loadModel(modelName, location="")
     preds = model.predict(x)
     preds = scaler.inverse_transform(preds)
     return preds.flatten()
