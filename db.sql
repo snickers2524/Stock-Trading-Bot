@@ -63,3 +63,7 @@ create trigger createAction after insert on predictions
             );
     end;
 
+
+select * from openingPrices order by date desc;
+select * from predictions order by date desc ;
+select * from actions order by date desc ;
