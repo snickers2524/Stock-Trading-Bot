@@ -22,7 +22,6 @@ def main():
         for company in companies:
             data = fct.getData(startDate=today, endDate=today+timedelta(days=1),company=company[1])
             data['Date'] = data.index
-            print(data)
 
             # Inserting the new opening price.  This then causes the trigger "updateResidualTrigger" to fire that updates the residual for the current trading day
             fct.insertData(data=data[['Date','Open']],cursor=cursor,table='openingPrices',company=company[1])
