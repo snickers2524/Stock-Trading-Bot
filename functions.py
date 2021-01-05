@@ -10,14 +10,13 @@ import tensorflow as tf
 from datetime import timedelta
 
 # These 2 lines are just for me to run the models on my gpu.
-# physical_devices = tf.config.list_physical_devices('GPU')
-# tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
+physical_devices = tf.config.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
 
 # This data queries data from yahoo finance
 def getData(startDate, endDate, company):
     object = yf.Ticker(company)
     data = object.history(start=startDate, end=endDate)
-    data.to_csv('test.csv')
     return data
 
 # This function inserts the data into the sql table
@@ -76,8 +75,8 @@ def loadModel(name, location=''):
     return model
 
 def predict(x, scaler, modelName):
-    model = loadModel(modelName, location="C:/Users/Administrator/Documents/GitHub/Stock-Trading-Bot/")
-    # model = loadModel(modelName, location="")
+    # model = loadModel(modelName, location="C:/Users/Administrator/Documents/GitHub/Stock-Trading-Bot/")
+    model = loadModel(modelName, location="")
     preds = model.predict(x)
     preds = scaler.inverse_transform(preds)
     return preds.flatten()
