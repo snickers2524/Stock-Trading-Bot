@@ -98,31 +98,3 @@ def makeOrder(company, numShares, action):
     app.disconnect()
 
 
-# makeOrder('FORD', 10, 'sell')
-
-# def run_loop():
-#     app.run()
-#
-# app = IBapi()
-# app.connect('127.0.0.1', 7497, 123)
-#
-# app.nextorderId = None
-#
-# # Start the socket in a thread
-# api_thread = threading.Thread(target=run_loop, daemon=True)
-# api_thread.start()
-#
-# app.createOrder(order_type='MKT', quantity=10, action='buy')
-#
-# app.createContract(shortName='FORD', securityType='STK', exchange='SMART', primaryExchange='SMART', curr='USD')
-#
-# # Place order
-# app.makeOrder()
-# time.sleep(3)
-#
-# # #Cancel order
-# # print('cancelling order')
-# # # app.cancelOrder(app.nextorderId)
-#
-# time.sleep(3)
-# app.disconnect()

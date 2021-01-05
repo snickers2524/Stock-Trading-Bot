@@ -10,8 +10,8 @@ import tensorflow as tf
 from datetime import timedelta
 
 # These 2 lines are just for me to run the models on my gpu.
-physical_devices = tf.config.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
+# physical_devices = tf.config.list_physical_devices('GPU')
+# tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
 
 # This data queries data from yahoo finance
 def getData(startDate, endDate, company):
